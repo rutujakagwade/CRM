@@ -1,0 +1,144 @@
+const Competitor = require('../models/Competitor');
+const asyncHandler = require('../middlewares/asyncHandler');
+
+// @desc    Get all competitors
+// @route   GET /api/competitors
+// @access  Private
+const getCompetitors = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const { search, status } = req.query;
+
+  let query = { createdBy: req.user.id };
+
+  // Add search functionality
+  if (search) {
+    query.$or = [
+      { name: new RegExp(search, 'i') },
+      { marketShare: new RegExp(search, 'i') },
+      { customerBase: new RegExp(search, 'i') }
+    ];
+  }
+
+  // Filter by status
+  if (status === 'active') {
+    query.isActive = true;
+  } else if (status === 'inactive') {
+    query.isActive = false;
+  }
+
+  const competitors = await Competitor.find(query)
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const total = await Competitor.countDocuments(query);
+
+  res.status(200).json({
+    success: true,
+    data: competitors,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  });
+});
+
+// @desc    Get single competitor
+// @route   GET /api/competitors/:id
+// @access  Private
+const getCompetitor = asyncHandler(async (req, res) => {
+  const competitor = await Competitor.findOne({
+    _id: req.params.id,
+    createdBy: req.user.id
+  });
+
+  if (!competitor) {
+    return res.status(404).json({
+      success: false,
+      error: 'Competitor not found'
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: competitor
+  });
+});
+
+// @desc    Create competitor
+// @route   POST /api/competitors
+// @access  Private
+const createCompetitor = asyncHandler(async (req, res) => {
+  const competitorData = {
+    ...req.body,
+    createdBy: req.user.id
+  };
+
+  const competitor = await Competitor.create(competitorData);
+
+  res.status(201).json({
+    success: true,
+    data: competitor
+  });
+});
+
+// @desc    Update competitor
+// @route   PUT /api/competitors/:id
+// @access  Private
+const updateCompetitor = asyncHandler(async (req, res) => {
+  const competitor = await Competitor.findOneAndUpdate(
+    { _id: req.params.id, createdBy: req.user.id },
+    req.body,
+    { new: true, runValidators: true }
+  );
+
+  if (!competitor) {
+    return res.status(404).json({
+      success: false,
+      error: 'Competitor not found'
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: competitor
+  });
+});
+
+// @desc    Delete competitor
+// @route   DELETE /api/competitors/:id
+// @access  Private
+const deleteCompetitor = asyncHandler(async (req, res) => {
+  const competitor = await Competitor.findOne({
+    _id: req.params.id,
+    createdBy: req.user.id
+  });
+
+  if (!competitor) {
+    return res.status(404).json({
+      success: false,
+      error: 'Competitor not found'
+    });
+  }
+
+  await competitor.remove();
+
+  res.status(200).json({
+    success: true,
+    data: {}
+  });
+});
+
+module.exports = {
+  getCompetitors,
+  getCompetitor,
+  createCompetitor,
+  updateCompetitor,
+  deleteCompetitor
+};

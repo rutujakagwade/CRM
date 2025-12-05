@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://crm-1-tbx0.onrender.com/api';
+const API_BASE_URL = 'https://crm-6-5bm3.onrender.com/api';
 
 interface ApiResponse<T> {
   success: boolean;

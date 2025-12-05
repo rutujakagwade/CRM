@@ -94,6 +94,16 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'CRM API Server',
+    health: '/api/health',
+    docs: 'API endpoints available under /api/*'
+  });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({

@@ -134,7 +134,12 @@ const seedData = async () => {
   }
 };
 
-// Run the seed function
-connectDB().then(() => {
-  seedData();
-});
+// Export the seed function for use in other files
+module.exports = seedData;
+
+// Run the seed function if this file is executed directly
+if (require.main === module) {
+  connectDB().then(() => {
+    seedData();
+  });
+}
